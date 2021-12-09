@@ -1,137 +1,117 @@
-import java.awt.Canvas;
-import java.awt.Frame;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.MouseInfo;
-import java.awt.PointerInfo;
-import java.awt.Toolkit;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.io.File;
-import java.io.IOException;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
 
-import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-
-public class Game extends JFrame{
-	static int setX = 0;
-	static int setY = 0;
-	static int score = 0;
-	static int newX = 0;
-	static int newY = 0;
-	
-	
-	
-	 Game(){
-         super("게임하기");
-         JPanel frm = new JPanel();
-         setSize(1000,1000);
-         add(frm);
-         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-         setVisible(true);
-         frm.addMouseListener(new MouseClick());
-         play();
+class Game extends JFrame implements ActionListener, Runnable{
+   ImageIcon ii = new ImageIcon(".//image//cat.jpeg");
+   private JButton jbt[] = new JButton[12];
+   private JButton start = new JButton("시작");
+   private JButton end = new JButton("종료");
+   private JLabel jlb = new JLabel("점수: 0");
+   private JLabel time_jlb = new JLabel("시간=> 0:10");
+   private BorderLayout bl = new BorderLayout(10,10);
+   private JPanel jp1 = new JPanel();
+   private GridLayout gl1 = new GridLayout(3,4);
+   private JPanel jp2 = new JPanel();
+   private GridLayout gl2 = new GridLayout(1,2);
+   private JPanel jp21 = new JPanel();
+   private FlowLayout fl21 = new FlowLayout(FlowLayout.RIGHT);
+   private int randomsu = 0;
+   private int count = -1;
+   public Game() {
+      super("게임하기");
+      this.init();
+      this.start();
+      super.setSize(500,400); //크기
+      Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+      int xpos = (int)(screen.getWidth()/2-super.getWidth()/2);
+      int ypos = (int)(screen.getHeight()/2-super.getHeight()/2);
+      super.setLocation(xpos,ypos);
+      super.setResizable(false);
+      super.setVisible(true);
+   }
+   public void init() {
+      Container con = this.getContentPane();
+      con.setLayout(bl);
+      con.add("North",time_jlb);
+      con.add("Center",jp1);
+      jp1.setLayout(gl1);
+      for (int i = 0; i < 12; i++) {
+         jbt[i] = new JButton();
+         jp1.add(jbt[i]);
       }
+      off_button();
+      con.add("South",jp2);
+      jp2.setLayout(gl2);
+      jp2.add(jlb);
+      jp2.add(jp21);
+      jp21.add(start);
+      jp21.add(end);
+   }
+   public void start() {
+      this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+      start.addActionListener(this);
+      end.addActionListener(this);
+      for (int i = 0; i < 12; i++) {
+         jbt[i].addActionListener(this);
+      }
+   }
+   public void actionPerformed(ActionEvent e) {
+      if(e.getSource() == start) {
+         time_jlb.setText("시간 -> 0:10");
+         jlb.setText("점수 : 0");
+         count = -1;
+         Thread th = new Thread(this);
+         th.start();
+         on_button();
+         random(0);
+      }else if(e.getSource() == end) {
+         System.exit(0);
+      }
+      for (int i = 0; i < 12; ++i) {
+         if(e.getSource() == jbt[i]) {
+            random(i);
+         }
+      }
+   }
+   public void off_button() {
+      for (int i = 0; i < 12; ++i) {
+         jbt[i].setEnabled(false);
+      }
+   }
+   public void on_button() {
+      for (int i = 0; i < 12; ++i) {
+         jbt[i].setEnabled(true);
+      }
+   }
 
-	//램덤으로 좌표 생성
-	public static int setX() {
-		int x = (int) (Math.random()*1000+1);
-		setX = x;
-		return x;
-	}
-	public static int setY() {
-		int min = 10;
-		int max = 1000;
-		int y = (int)((Math.random() * (max - min)) + min);
-		setY = y;
-		return y;
-	}
-	
-	
-	
-
-	//이미지 클릭 했는지 안했는지
-	public static boolean check() {
-		int X = setX;
-		int Y = setY;
-		int newX = Game.newX;
-		int newY = Game.newY;
-		System.out.println("클릭한 좌표: ("+newX +"," + newY+")");
-		if(X == newX && Y == newY) {
-			score += 10;
-			System.out.println("score: "+ score);
-			return true;
-		}else {
-			System.out.println("score: "+ score);
-			return false;
-			
-		}
-		
-	}
-	
-	//표시된 이미지 없애기
-	
-	public static void play() {
-		int x = Game.setX();
-		int y = Game.setY();
-		System.out.println("좌표 생성: ("+x+","+y+")");
-		
-		//이미지 넣기
-		new MyThread();
-	}
-	
-
+   @Override
+   public void run() {
+      int time = 10;
+      while(true) {
+         try {
+            Thread.sleep(1000);
+         }catch(InterruptedException e) {}
+         time--;
+         if(time == 0) {
+            time_jlb.setText("게임 끝");
+            off_button();
+            break;
+         }
+         time_jlb.setText("시간 -> 0:0" + time);
+      }
+   }
+   public void random(int i) {
+      if(i != randomsu)return;
+      count ++;
+      jbt[randomsu].setIcon(null);
+      randomsu = (int)(Math.random() * 12);
+      jbt[randomsu].setIcon(ii);
+      jlb.setText("점수: " + count);
+   }
+   
+   public static void main(String[] ar) {
+       new Game();
+   }
+   
 }
-class MyThread extends Frame{
-	//이미지 넣기
-	ImageIcon i = new ImageIcon("C:\\Users\\OHMINJUNG\\git\\SaveTheCat\\SaveTheCat\\cat.PNG");
-	Image im = i.getImage();
-	public void paintComponent(Graphics g) {
-		System.out.println("이미지 넣기");
-		g.drawImage(im,Game.setX,Game.setY,100,100,this);
-	}
-}
-class MouseClick extends JFrame implements MouseListener{
-	@Override
-	public void mouseClicked(MouseEvent e) {
-		Game.newX = e.getX();
-		Game.newY = e.getY();
-		Game.check();
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mousePressed(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent e) {
-		
-		
-	}
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		new MouseClick();
-		System.out.println("마우스 클릭");
-	}
-	
-}
-
